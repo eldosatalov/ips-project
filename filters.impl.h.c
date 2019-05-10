@@ -545,7 +545,7 @@ float sorted_coeff[]=
         "vpbroadcastd %%eax, %%xmm7\n\t" // red
         "vcvtdq2ps %%xmm7, %%xmm7\n\t"
 
-        "vmulps %%xmm1, %%xmm7, %%xmm7\n\t"
+        "vmulps %%xmm1, %%xmm5, %%xmm7\n\t"
         "vmulps %%xmm2, %%xmm6, %%xmm6\n\t"
         "vmulps %%xmm3, %%xmm5, %%xmm5\n\t"
 
