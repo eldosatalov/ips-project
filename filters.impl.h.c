@@ -498,11 +498,11 @@ static inline void filters_apply_sepia(
 
 #elif defined FILTERS_SIMD_ASM_IMPLEMENTATION
 
-static const float sorted_coeff[]=
+float sorted_coeff[]=
        {
-         0.272f, 0.349f, 0.393f, 1.0f, // R
-         0.534f, 0.686f, 0.769f, 1.0f, // G
-         0.131f, 0.168f, 0.189f, 1.0f, // B
+         0.272f, 0.349f, 0.393f, 1.0f,
+         0.534f, 0.686f, 0.769f, 1.0f,
+         0.131f, 0.168f, 0.189f, 1.0f, 
        };
 
        // +---+--------------------------+
@@ -527,9 +527,9 @@ static const float sorted_coeff[]=
 // Gs = 0.349 * R + 0.686 * G + 0.168 * B
 // Bs = 0.272 * R + 0.534 * G + 0.131 * B
     __asm__ __volatile__ (
-        "vmovups (%0), %%xmm1\n\t"
-        "vmovups 0x10(%0), %%xmm2\n\t"  // array
-        "vmovups 0x20(%0), %%xmm3\n\t"
+        "vmovups (%3), %%xmm1\n\t"
+        "vmovups 0x10(%3), %%xmm2\n\t"  // array
+        "vmovups 0x20(%3), %%xmm3\n\t"
 
         "movb 0x3(%1,%2), %%al\n\t"
 
@@ -562,8 +562,8 @@ static const float sorted_coeff[]=
         "vpmovusdb %%xmm0, (%1,%2)\n\t"
         "movb %%al, 0x3(%1,%2)\n\t"
         ::
+          "S"(Sepia_Coefficients), "D"(pixels), "c"(position)
           "d"(sorted_coeff),
-          "D"(pixels), "c"(position)
         :
         "%zmm1", "%zmm2","%zmm3","%zmm0"
     );
