@@ -531,7 +531,7 @@ static const float sorted_coeff[]=
         "vmovups 0x10(%0), %%xmm2\n\t"  // array
         "vmovups 0x20(%0), %%xmm3\n\t"
 
-        "movb 0x3(%1,%2), %%bl"
+        "movb 0x3(%1,%2), %%bl\n\t"
 
         "movb (%1,%2), %%al\n\t"
         "vpbroadcastd %%eax, %%xmm4\n\t"  // Blue
