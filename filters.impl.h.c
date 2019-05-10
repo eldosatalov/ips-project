@@ -531,41 +531,41 @@ static const float sorted_coeff[]=
         "vmovups 0x10(%0), %%xmm2\n\t"  // array
         "vmovups 0x20(%0), %%xmm3\n\t"
 
-        "movb 0x3(%1,%2), %%bl\n\t"
+        "movb 0x3(%1,%2), %%al\n\t"
 
-        "movb (%1,%2), %%al\n\t"
-        "vpbroadcastd %%eax, %%xmm4\n\t"  // Blue
-        "vcvtdq2ps %%xmm4, %%xmm4\n\t"
-
-        "movb 0x1(%1,%2), %%al\n\t"
-        "vpbroadcastd %%eax, %%xmm5\n\t" // green
+        "movb (%1,%2), %%bl\n\t"
+        "vpbroadcastd %%ebx, %%xmm5\n\t"  // Blue
         "vcvtdq2ps %%xmm5, %%xmm5\n\t"
 
-        "movb 0x2(%1,%2), %%al\n\t"
-        "vpbroadcastd %%eax, %%xmm6\n\t" // red
+        "movb 0x1(%1,%2), %%bl\n\t"
+        "vpbroadcastd %%ebx, %%xmm6\n\t" // green
         "vcvtdq2ps %%xmm6, %%xmm6\n\t"
 
-        "vmulps %%xmm1, %%xmm6, %%xmm6\n\t"
-        "vmulps %%xmm2, %%xmm5, %%xmm5\n\t"
-        "vmulps %%xmm3, %%xmm4, %%xmm4\n\t"
+        "movb 0x2(%1,%2), %%bl\n\t"
+        "vpbroadcastd %%eax, %%xmm7\n\t" // red
+        "vcvtdq2ps %%xmm7, %%xmm7\n\t"
 
-        "vaddps %%xmm6, %%xmm5, %%xmm0\n\t"
-        "vaddps %%xmm4, %%xmm0, %%xmm0\n\t"
+        "vmulps %%xmm1, %%xmm7, %%xmm7\n\t"
+        "vmulps %%xmm2, %%xmm6, %%xmm6\n\t"
+        "vmulps %%xmm3, %%xmm5, %%xmm5\n\t"
+
+        "vaddps %%xmm7, %%xmm6, %%xmm0\n\t"
+        "vaddps %%xmm5, %%xmm0, %%xmm0\n\t"
         "vcvtps2dq %%xmm0, %%xmm0\n\t"
 
-        "movl $0xff, %%eax\n\t"
-        "vpbroadcastd %%eax, %%xmm7\n\t"
+        "movl $0xff, %%ebx\n\t"
+        "vpbroadcastd %%ebx, %%xmm8\n\t"
 
-        "vpcmpgtd %%xmm7, %%xmm0, %%k1\n\t"
-        "vmovdqa32 %%xmm7, %%xmm0%{%%k1%}\n\t"
+        "vpcmpgtd %%xmm8, %%xmm0, %%k1\n\t"
+        "vmovdqa32 %%xmm8, %%xmm0%{%%k1%}\n\t"
 
         "vpmovusdb %%xmm0, (%1,%2)\n\t"
-        "movb %%bl, 0x3(%1,%2)\n\t"
+        "movb %%al, 0x3(%1,%2)\n\t"
         ::
           "S"(sorted_coeff),
           "D"(pixels), "c"(position)
         :
-        "%eax", "%ebx"
+        "%zmm1", "%zmm2","%zmm3","%zmm0"
     );
 
 #else
