@@ -522,10 +522,10 @@ float sorted_coeff[]=
     );
 
 #elif defined x86_64_CPU
-//
-// Rs = 0.393 * R + 0.769 * G + 0.189 * B
-// Gs = 0.349 * R + 0.686 * G + 0.168 * B
-// Bs = 0.272 * R + 0.534 * G + 0.131 * B
+        //
+        // Rs = 0.393 * R + 0.769 * G + 0.189 * B
+        // Gs = 0.349 * R + 0.686 * G + 0.168 * B
+        // Bs = 0.272 * R + 0.534 * G + 0.131 * B
     __asm__ __volatile__ (
         "vmovups (%3), %%xmm1\n\t"
         "vmovups 0x10(%3), %%xmm2\n\t"  // array
@@ -553,11 +553,11 @@ float sorted_coeff[]=
         "vaddps %%xmm5, %%xmm0, %%xmm0\n\t"
         "vcvtps2dq %%xmm0, %%xmm0\n\t"
 
-        "movl $0xff, %%ebx\n\t"
-        "vpbroadcastd %%ebx, %%xmm8\n\t"
-
-        "vpcmpgtd %%xmm8, %%xmm0, %%k1\n\t"
-        "vmovdqa32 %%xmm8, %%xmm0%{%%k1%}\n\t"
+        // "movl $0xff, %%ebx\n\t"
+        // "vpbroadcastd %%ebx, %%xmm8\n\t"
+        //
+        // "vpcmpgtd %%xmm8, %%xmm0, %%k1\n\t"
+        // "vmovdqa32 %%xmm8, %%xmm0%{%%k1%}\n\t"
 
         "vpmovusdb %%xmm0, (%1,%2)\n\t"
         "movb %%al, 0x3(%1,%2)\n\t"
