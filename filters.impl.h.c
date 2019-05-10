@@ -553,7 +553,7 @@ static const float sorted_coeff[]=
         "vaddps %%xmm4, %%xmm0, %%xmm0\n\t"
         "vcvtps2dq %%xmm0, %%xmm0\n\t"
 
-        "movl %0xff, %%al\n\t"
+        "movl $0xff, %%al\n\t"
         "vpbroadcastd %%eax, %%xmm7\n\t"
 
         "vpcmpgtd %%xmm7, %%xmm0, %%k1\n\t"
