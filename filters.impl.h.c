@@ -563,7 +563,7 @@ float sorted_coeff[]=
         "movb %%al, 0x3(%1,%2)\n\t"
         ::
           "S"(Sepia_Coefficients), "D"(pixels), "c"(position),
-          "d"(sorted_coeff),
+          "d"(sorted_coeff)
         :
         "%zmm1", "%zmm2","%zmm3","%zmm0"
     );
