@@ -153,7 +153,7 @@ static void filters_brightness_contrast_processing_task(
         3;
 #if defined FILTERS_SIMD_ASM_IMPLEMENTATION
     size_t step =
-        16;
+        3;
 #else
     size_t step =
         3;
@@ -257,4 +257,3 @@ static void filters_median_processing_task(
 
     filters_median_data_destroy(data);
 }
-
