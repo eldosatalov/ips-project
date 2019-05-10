@@ -153,7 +153,7 @@ static void filters_brightness_contrast_processing_task(
         3;
 #if defined FILTERS_SIMD_ASM_IMPLEMENTATION
     size_t step =
-        3;
+        16;
 #else
     size_t step =
         3;
@@ -192,7 +192,7 @@ static void filters_sepia_processing_task(
         data->pixels;
 #if defined FILTERS_SIMD_ASM_IMPLEMENTATION
     size_t step =
-        16;
+        3;
 #else
     size_t step =
         3;
