@@ -527,21 +527,21 @@ static const float sorted_coeff[]=
 // Gs = 0.349 * R + 0.686 * G + 0.168 * B
 // Bs = 0.272 * R + 0.534 * G + 0.131 * B
     __asm__ __volatile__ (
-        "vmovups (%3), %%xmm1\n\t"
-        "vmovups 0x10(%3), %%xmm2\n\t"  // array
-        "vmovups 0x20(%3), %%xmm3\n\t"
+        "vmovups (%0), %%xmm1\n\t"
+        "vmovups 0x10(%0), %%xmm2\n\t"  // array
+        "vmovups 0x20(%0), %%xmm3\n\t"
 
         "movb 0x3(%1,%2), %%bl"
 
-        "movb (%2, %3), %%al\n\t"
+        "movb (%1,%2), %%al\n\t"
         "vpbroadcastd %%eax, %%xmm4\n\t"  // Blue
         "vcvtdq2ps %%xmm4, %%xmm4\n\t"
 
-        "movb 0x1(%2, %3), %%al\n\t"
+        "movb 0x1(%1,%2), %%al\n\t"
         "vpbroadcastd %%eax, %%xmm5\n\t" // green
         "vcvtdq2ps %%xmm5, %%xmm5\n\t"
 
-        "movb 0x2(%2, %3), %%al\n\t"
+        "movb 0x2(%1,%2), %%al\n\t"
         "vpbroadcastd %%eax, %%xmm6\n\t" // red
         "vcvtdq2ps %%xmm6, %%xmm6\n\t"
 
