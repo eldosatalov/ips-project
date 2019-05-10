@@ -341,6 +341,7 @@ static inline void filters_apply_sepia(
 
 #elif defined FILTERS_X87_ASM_IMPLEMENTATION
 
+
 #if defined x86_32_CPU
 
     // Similar, but not a one to one conversion of the C code above. Try to find in what way.
@@ -497,6 +498,23 @@ static inline void filters_apply_sepia(
 
 #elif defined FILTERS_SIMD_ASM_IMPLEMENTATION
 
+static const float sorted_coeff[]=
+       {
+         0.272f, 0.349f, 0.393f, 1.0f, // R
+         0.534f, 0.686f, 0.769f, 1.0f, // G
+         0.131f, 0.168f, 0.189f, 1.0f, // B
+       }
+
+       // +---+--------------------------+
+       // | r :   any register           |
+       // +---+--------------------------+
+       // | a :   %rax, %eax, %ax, %al   |
+       // | b :   %rbx, %ebx, %bx, %bl   |
+       // | c :   %rcx, %ecx, %cx, %cl   |
+       // | d :   %rdx, %edx, %dx, %dl   |
+       // | S :   %rsi, %esi, %si        |
+       // | D :   %rdi, %edi, %di        |
+       // +---+--------------------------+
 #if defined x86_32_CPU
 
     __asm__ __volatile__ (
@@ -504,9 +522,50 @@ static inline void filters_apply_sepia(
     );
 
 #elif defined x86_64_CPU
-
+//
+// Rs = 0.393 * R + 0.769 * G + 0.189 * B
+// Gs = 0.349 * R + 0.686 * G + 0.168 * B
+// Bs = 0.272 * R + 0.534 * G + 0.131 * B
     __asm__ __volatile__ (
-        "\n\t" :::
+        "vmovups (%3), %%xmm1\n\t"
+        "vmovups 0x10(%3), %%xmm2\n\t"  // array
+        "vmovups 0x20(%3), %%xmm3\n\t"
+
+        "movb 0x3(%1,%2), %%bl"
+
+        "movb (%2, %3), %%al\n\t"
+        "vpbroadcastd %%eax, %%xmm4\n\t"  // Blue
+        "vcvtdq2ps %%xmm4, %%xmm4\n\t"
+
+        "movb 0x1(%2, %3), %%al\n\t"
+        "vpbroadcastd %%eax, %%xmm5\n\t" // green
+        "vcvtdq2ps %%xmm5, %%xmm5\n\t"
+
+        "movb 0x2(%2, %3), %%al\n\t"
+        "vpbroadcastd %%eax, %%xmm6\n\t" // red
+        "vcvtdq2ps %%xmm6, %%xmm6\n\t"
+
+        "vmulps %%xmm1, %%xmm6, %%xmm6\n\t"
+        "vmulps %%xmm2, %%xmm5, %%xmm5\n\t"
+        "vmulps %%xmm3, %%xmm4, %%xmm4\n\t"
+
+        "vaddps %%xmm6, %%xmm5, %%xmm0\n\t"
+        "vaddps %%xmm4, %%xmm0, %%xmm0\n\t"
+        "vcvtps2dq %%xmm0, %%xmm0\n\t"
+
+        "movl %0xff, %%al\n\t"
+        "vpbroadcastd %%eax, %%xmm7\n\t"
+
+        "vpcmpgtd %%xmm7, %%xmm0, %%k1\n\t"
+        "vmovdqa32 %%xmm7, %%xmm0{%%k1%}\n\t"
+
+        "vpmovusdb %%xmm0, (%1,%2)\n\t"
+        "movb %%bl, 0x3(%1,%2)\n\t"
+        ::
+          "S"(sorted_coeff),
+          "b"(pixels), "c"(position)
+        :
+        "%zmm0", "%zmm1", "%zmm2", "%zmm3",
     );
 
 #else
