@@ -563,9 +563,9 @@ static const float sorted_coeff[]=
         "movb %%bl, 0x3(%1,%2)\n\t"
         ::
           "S"(sorted_coeff),
-          "b"(pixels), "c"(position)
+          "D"(pixels), "c"(position)
         :
-        "%zmm0", "%zmm1", "%zmm2", "%zmm3",
+        "%zmm0", "%zmm1", "%zmm2", "%zmm3"
     );
 
 #else
