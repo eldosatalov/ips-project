@@ -565,7 +565,7 @@ static const float sorted_coeff[]=
           "S"(sorted_coeff),
           "D"(pixels), "c"(position)
         :
-        "%zmm0", "%zmm1", "%zmm2", "%zmm3"
+        "%eax", "%ebx"
     );
 
 #else
