@@ -562,7 +562,7 @@ static const float sorted_coeff[]=
         "vpmovusdb %%xmm0, (%1,%2)\n\t"
         "movb %%al, 0x3(%1,%2)\n\t"
         ::
-          "S"(sorted_coeff),
+          "d"(sorted_coeff),
           "D"(pixels), "c"(position)
         :
         "%zmm1", "%zmm2","%zmm3","%zmm0"
