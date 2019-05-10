@@ -502,7 +502,7 @@ float sorted_coeff[]=
        {
          0.272f, 0.349f, 0.393f, 1.0f,
          0.534f, 0.686f, 0.769f, 1.0f,
-         0.131f, 0.168f, 0.189f, 1.0f, 
+         0.131f, 0.168f, 0.189f, 1.0f,
        };
 
        // +---+--------------------------+
@@ -562,7 +562,7 @@ float sorted_coeff[]=
         "vpmovusdb %%xmm0, (%1,%2)\n\t"
         "movb %%al, 0x3(%1,%2)\n\t"
         ::
-          "S"(Sepia_Coefficients), "D"(pixels), "c"(position)
+          "S"(Sepia_Coefficients), "D"(pixels), "c"(position),
           "d"(sorted_coeff),
         :
         "%zmm1", "%zmm2","%zmm3","%zmm0"
