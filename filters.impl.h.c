@@ -564,59 +564,85 @@ __asm__ __volatile__ (
 );
 
 #elif defined x86_64_CPU
-        //
         // Rs = 0.393 * R + 0.769 * G + 0.189 * B
         // Gs = 0.349 * R + 0.686 * G + 0.168 * B
         // Bs = 0.272 * R + 0.534 * G + 0.131 * B
-    float B[5], G[5], R[5];
+    float B[16], G[16], R[16];
 
-    for(int i = 0, j = 0; i < 5; i++, j+=3){
+    for(int i = 0, j = 0; i < 48; i++, j+=3){
       B[i] = (float)pixels[position + j];
       G[i] = (float)pixels[position + j + 1];
       R[i] = (float)pixels[position + j + 2];
     }
 
+      // 0.272f, 0.534f, 0.131f,
+      // 0.349f, 0.686f, 0.168f,
+      // 0.393f, 0.769f, 0.189f
+
     __asm__ __volatile__ (
-        // loading coefficients to zmm 1 2 3
-        "vmovups (%2), %%zmm1\n\t"      // R
-        "vmovups 0x40(%2), %%zmm2\n\t"  // G
-        "vmovups 0x80(%2), %%zmm3\n\t"  // B
+       
+        "vmovups (%3), %%zmm1\n\t"   // 16 pixels of Blue
+        "vmovups (%4), %%zmm2\n\t"   // 16 pixels of Green
+        "vmovups (%5), %%zmm3\n\t"   // 16 pixels of Red
 
-        // storing
-        //"movb 0x40(%1, %2), %%al\n\t"
+        // 0.272f, 0.534f, 0.131f
+        "vbroadcastss (%2), %%zmm4\n\t" // B
+        "vbroadcastss 0x4(%2), %%zmm5\n\t" // G
+        "vbroadcastss 0x8(%2), %%zmm6\n\t" // R
 
-        //loading B G R pixels to zmm 5 6 7 respectevly
-        "vmovups (%3), %%zmm5\n\t" // B
-        "vmovups (%4), %%zmm6\n\t" // G
-        "vmovups (%5), %%zmm7\n\t" // R
+        // Bs = 0.272 * R + 0.534 * G + 0.131 * B
+        "vmulps %%zmm1, %%zmm6, %%zmm9\n\t" // Bp * Rc
+        "vmulps %%zmm2, %%zmm5, %%zmm8\n\t" // Gp * Gc
+        "vmulps %%zmm3, %%zmm4, %%zmm7\n\t" // Rp * Bc
 
-        /*
-          *R = R_coeff * B
-          *G = G_coeff * G
-          *B = B_coeff * B
-        */
-        "vmulps %%zmm1, %%zmm5, %%zmm7\n\t"
-        "vmulps %%zmm2, %%zmm6, %%zmm6\n\t"
-        "vmulps %%zmm3, %%zmm5, %%zmm5\n\t"
-
-        /*
-          zmm0  = *R + *G + *B
-        */
-        "vaddps %%zmm7, %%zmm6, %%zmm0\n\t"
-        "vaddps %%zmm5, %%zmm0, %%zmm0\n\t"
+        "vaddps %%zmm9, %%zmm8, %%zmm8\n\t"
+        "vaddps %%zmm8, %%zmm7, %%zmm7\n\t"
+        "vmovups %%zmm7, (%3)\n\t"   // 16 pixels of Red
+    
 
 
+        "vbroadcastss 0xc(%2), %%zmm4\n\t" // B
+        "vbroadcastss 0x10(%2), %%zmm5\n\t" // G
+        "vbroadcastss 0x14(%2), %%zmm6\n\t" // R
 
-        //"vcvtps2dq %%zmm0, %%zmm0\n\t"
+        // B 
+        "vmulps %%zmm1, %%zmm6, %%zmm9\n\t"
+        "vmulps %%zmm2, %%zmm5, %%zmm8\n\t"
+        "vmulps %%zmm3, %%zmm4, %%zmm7\n\t"
 
+        "vaddps %%zmm9, %%zmm8, %%zmm8\n\t"
+        "vaddps %%zmm8, %%zmm7, %%zmm7\n\t"
+        "vmovups %%zmm7, (%3)\n\t"   // 16 pixels of Red
+    
 
+        "vbroadcastss 0x18(%2), %%zmm4\n\t" // B
+        "vbroadcastss 0x1c(%2), %%zmm5\n\t" // G
+        "vbroadcastss 0x20(%2), %%zmm6\n\t" // R
+
+        // B 
+        "vmulps %%zmm1, %%zmm6, %%zmm9\n\t"
+        "vmulps %%zmm2, %%zmm5, %%zmm8\n\t"
+        "vmulps %%zmm3, %%zmm4, %%zmm7\n\t"
+
+        "vaddps %%zmm9, %%zmm8, %%zmm8\n\t"
+        "vaddps %%zmm8, %%zmm7, %%zmm7\n\t"
+        "vmovups %%zmm7, (%3)\n\t"   // 16 pixels of Red
+    
         ::
           "D"(pixels), "S"(position), // 0 1
-          "d"(zmm_coeff), "a"(B),     // 2 3
+          "d"(Sepia_Coefficients), "a"(B),     // 2 3
           "b"(G), "c"(R)              // 4 5
         :
         "%zmm1", "%zmm2","%zmm3","%zmm0"
     );
+
+    
+    for(int i = 0, j = 0; i < 48; i++, j+=3){
+      pixels[position + j]     =  (uint8_t) UTILS_CLAMP(B[i], 0.0f, 255.0f);
+      pixels[position + j + 1] =  (uint8_t) UTILS_CLAMP(G[i], 0.0f, 255.0f);
+      pixels[position + j + 2] =  (uint8_t) UTILS_CLAMP(R[i], 0.0f, 255.0f);
+    } 
+    
 
 #else
 #error "Unsupported processor architecture"

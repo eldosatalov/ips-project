@@ -192,7 +192,7 @@ static void filters_sepia_processing_task(
         data->pixels;
 #if defined FILTERS_SIMD_ASM_IMPLEMENTATION
     size_t step =
-        3;
+        48;
 #else
     size_t step =
         3;
