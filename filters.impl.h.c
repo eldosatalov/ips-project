@@ -719,61 +719,32 @@ static inline void filters_apply_median(
         );
 
 #elif defined x86_64_CPU
-      double wndw[window_size];
-      for(int i = 0; i < window_size; i++){
-        wndw[i] = (double)window[i];
-      }
-      __m512d result = _mm512_load_pd(wndw);
-      {
-          __m512i idxNoNeigh = _mm512_set_epi64 (6 , 7, 4, 5, 2, 3, 0, 1) ;
-          __m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
-          __m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
-          __m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+      int64_t a[] = {6, 7, 4, 5, 2, 3, 0, 1};
+      int64_t b[] = {4, 5, 6, 7, 0, 1, 2, 3};
+      int64_t c[] = {0, 1, 2, 3, 4, 5, 6, 7};
+      int64_t d[] = {5, 4, 7, 6, 1, 0, 3, 2};
 
-          result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
-      }
-      {
-          __m512i idxNoNeigh = _mm512_set_epi64 (4 , 5, 6, 7, 0, 1, 2, 3) ;
-          __m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
-          __m512d permNeighMin = _mm512_min_pd(permNeigh , result) ;
-          __m512d permNeighMax = _mm512_max_pd(permNeigh , result) ;
+      __asm__ __volatile__ (
+          "vmovapd   (%0), %%zmm0\n\t" // result = window
+          "vmovdqa64 (%1), %%zmm1\n\t" // a[]
+          "vmovdqa64 (%2), %%zmm2\n\t" // b[]
+          "vmovdqa64 (%3), %%zmm3\n\t" // c[]
+          "vmovdqa64 (%4), %%zmm4\n\t" // d[]
 
-          result = _mm512_mask_mov_pd(permNeighMin , 0xCC, permNeighMax);
-      }
-      {
-          __m512i idxNoNeigh = _mm512_set_epi64 (6 , 7, 4, 5, 2, 3, 0, 1) ;
-          __m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
-          __m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
-          __m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+//__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
+          "vpermpd %%zmm1, %%zmm0, %%zmm5%{%%k%}\n\t"
+//__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
+          "vminpd  %%zmm5, %%zmm0, %%zmm6%{%%k%}\n\t"
+//__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+          "vmaxpd  %%zmm5, %%zmm0, %%zmm7%{%%k%}\n\t"
 
-          result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
-      }
-      {
-          __m512i idxNoNeigh = _mm512_set_epi64 (0 , 1, 2, 3, 4, 5, 6, 7) ;
-          __m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
-          __m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
-          __m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+//  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
 
-          result = _mm512_mask_mov_pd(permNeighMin , 0xF0, permNeighMax);
-      }
-      {
-          __m512i idxNoNeigh = _mm512_set_epi64 (5 , 4, 7, 6, 1, 0, 3, 2) ;
-          __m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
-          __m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
-          __m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+          ::"S"(window), "a"(a),
+            "b"(b), "c"(c), "d"(d)
+          :
+      );
 
-          result = _mm512_mask_mov_pd(permNeighMin , 0xCC, permNeighMax);
-      }
-      {
-          __m512i idxNoNeigh = _mm512_set_epi64 (6 , 7, 4, 5, 2, 3, 0, 1) ;
-          __m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
-          __m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
-          __m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
-
-          result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
-      }
-
-      _mm512_store_pd(wndw, result);
 
 #else
 #error "Unsupported processor architecture"
