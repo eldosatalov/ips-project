@@ -505,6 +505,10 @@ float sorted_coeff[]=
          0.131f, 0.168f, 0.189f, 1.0f,
        };
 
+       //
+       // 0.272f, 0.534f, 0.131f,
+       // 0.349f, 0.686f, 0.168f,
+       // 0.393f, 0.769f, 0.189f
        // +---+--------------------------+
        // | r :   any register           |
        // +---+--------------------------+
@@ -517,53 +521,99 @@ float sorted_coeff[]=
        // +---+--------------------------+
 #if defined x86_32_CPU
 
-    __asm__ __volatile__ (
-        "\n\t" :::
-    );
+__asm__ __volatile__ (
+    "vmovups (%3), %%xmm1\n\t"
+    "vmovups 0x10(%3), %%xmm2\n\t"  // array
+    "vmovups 0x20(%3), %%xmm3\n\t"
+
+    "movb 0x3(%1,%2), %%al\n\t"
+
+    "movb (%1,%2), %%bl\n\t"
+    "vpbroadcastd %%ebx, %%xmm5\n\t"  // Blue
+    "vcvtdq2ps %%xmm5, %%xmm5\n\t"
+
+    "movb 0x1(%1,%2), %%bl\n\t"
+    "vpbroadcastd %%ebx, %%xmm6\n\t" // green
+    "vcvtdq2ps %%xmm6, %%xmm6\n\t"
+
+    "movb 0x2(%1,%2), %%bl\n\t"
+    "vpbroadcastd %%eax, %%xmm7\n\t" // red
+    "vcvtdq2ps %%xmm7, %%xmm7\n\t"
+
+    "vmulps %%xmm1, %%xmm5, %%xmm7\n\t"
+    "vmulps %%xmm2, %%xmm6, %%xmm6\n\t"
+    "vmulps %%xmm3, %%xmm5, %%xmm5\n\t"
+
+    "vaddps %%xmm7, %%xmm6, %%xmm0\n\t"
+    "vaddps %%xmm5, %%xmm0, %%xmm0\n\t"
+    "vcvtps2dq %%xmm0, %%xmm0\n\t"
+
+    // "movl $0xff, %%ebx\n\t"
+    // "vpbroadcastd %%ebx, %%xmm8\n\t"
+    //
+    // "vpcmpgtd %%xmm8, %%xmm0, %%k1\n\t"
+    // "vmovdqa32 %%xmm8, %%xmm0%{%%k1%}\n\t"
+
+    "vpmovusdb %%xmm0, (%1,%2)\n\t"
+    "movb %%al, 0x3(%1,%2)\n\t"
+    ::
+      "S"(Sepia_Coefficients), "D"(pixels), "c"(position),
+      "d"(sorted_coeff)
+    :
+    "%zmm1", "%zmm2","%zmm3","%zmm0"
+);
 
 #elif defined x86_64_CPU
         //
         // Rs = 0.393 * R + 0.769 * G + 0.189 * B
         // Gs = 0.349 * R + 0.686 * G + 0.168 * B
         // Bs = 0.272 * R + 0.534 * G + 0.131 * B
+    float B[5], G[5], R[5];
+
+    for(int i = 0, j = 0; i < 5; i++, j+=3){
+      B[i] = (float)pixels[position + j];
+      G[i] = (float)pixels[position + j + 1];
+      R[i] = (float)pixels[position + j + 2];
+    }
+
     __asm__ __volatile__ (
-        "vmovups (%3), %%xmm1\n\t"
-        "vmovups 0x10(%3), %%xmm2\n\t"  // array
-        "vmovups 0x20(%3), %%xmm3\n\t"
+        // loading coefficients to zmm 1 2 3
+        "vmovups (%2), %%zmm1\n\t"      // R
+        "vmovups 0x40(%2), %%zmm2\n\t"  // G
+        "vmovups 0x80(%2), %%zmm3\n\t"  // B
 
-        "movb 0x3(%1,%2), %%al\n\t"
+        // storing
+        //"movb 0x40(%1, %2), %%al\n\t"
 
-        "movb (%1,%2), %%bl\n\t"
-        "vpbroadcastd %%ebx, %%xmm5\n\t"  // Blue
-        "vcvtdq2ps %%xmm5, %%xmm5\n\t"
+        //loading B G R pixels to zmm 5 6 7 respectevly
+        "vmovups (%3), %%zmm5\n\t" // B
+        "vmovups (%4), %%zmm6\n\t" // G
+        "vmovups (%5), %%zmm7\n\t" // R
 
-        "movb 0x1(%1,%2), %%bl\n\t"
-        "vpbroadcastd %%ebx, %%xmm6\n\t" // green
-        "vcvtdq2ps %%xmm6, %%xmm6\n\t"
+        /*
+          *R = R_coeff * B
+          *G = G_coeff * G
+          *B = B_coeff * B
+        */
+        "vmulps %%zmm1, %%zmm5, %%zmm7\n\t"
+        "vmulps %%zmm2, %%zmm6, %%zmm6\n\t"
+        "vmulps %%zmm3, %%zmm5, %%zmm5\n\t"
 
-        "movb 0x2(%1,%2), %%bl\n\t"
-        "vpbroadcastd %%eax, %%xmm7\n\t" // red
-        "vcvtdq2ps %%xmm7, %%xmm7\n\t"
+        /*
+          zmm0  = *R + *G + *B
+        */
+        "vaddps %%zmm7, %%zmm6, %%zmm0\n\t"
+        "vaddps %%zmm5, %%zmm0, %%zmm0\n\t"
 
-        "vmulps %%xmm1, %%xmm5, %%xmm7\n\t"
-        "vmulps %%xmm2, %%xmm6, %%xmm6\n\t"
-        "vmulps %%xmm3, %%xmm5, %%xmm5\n\t"
 
-        "vaddps %%xmm7, %%xmm6, %%xmm0\n\t"
-        "vaddps %%xmm5, %%xmm0, %%xmm0\n\t"
-        "vcvtps2dq %%xmm0, %%xmm0\n\t"
 
-        // "movl $0xff, %%ebx\n\t"
-        // "vpbroadcastd %%ebx, %%xmm8\n\t"
-        //
-        // "vpcmpgtd %%xmm8, %%xmm0, %%k1\n\t"
-        // "vmovdqa32 %%xmm8, %%xmm0%{%%k1%}\n\t"
+        //"vcvtps2dq %%zmm0, %%zmm0\n\t"
 
-        "vpmovusdb %%xmm0, (%1,%2)\n\t"
-        "movb %%al, 0x3(%1,%2)\n\t"
+
         ::
-          "S"(Sepia_Coefficients), "D"(pixels), "c"(position),
-          "d"(sorted_coeff)
+          "D"(pixels), "S"(position), // 0 1
+          "d"(zmm_coeff), "a"(B),     // 2 3
+          "b"(G), "c"(R)              // 4 5
         :
         "%zmm1", "%zmm2","%zmm3","%zmm0"
     );
@@ -643,8 +693,11 @@ static inline void filters_apply_median(
         );
 
 #elif defined x86_64_CPU
-
-      __m512d result = _mm512_load_pd(window);
+      double wndw[window_size];
+      for(int i = 0; i < window_size; i++){
+        wndw[i] = (double)window[i];
+      }
+      __m512d result = _mm512_load_pd(wndw);
       {
           __m512i idxNoNeigh = _mm512_set_epi64 (6 , 7, 4, 5, 2, 3, 0, 1) ;
           __m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
@@ -694,7 +747,7 @@ static inline void filters_apply_median(
           result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
       }
 
-      _mm512_store_pd(window, result);
+      _mm512_store_pd(wndw, result);
 
 #else
 #error "Unsupported processor architecture"
