@@ -719,31 +719,79 @@ static inline void filters_apply_median(
         );
 
 #elif defined x86_64_CPU
-      int64_t a[] = {6, 7, 4, 5, 2, 3, 0, 1};
-      int64_t b[] = {4, 5, 6, 7, 0, 1, 2, 3};
-      int64_t c[] = {0, 1, 2, 3, 4, 5, 6, 7};
-      int64_t d[] = {5, 4, 7, 6, 1, 0, 3, 2};
+// int64_t a[] = {6, 7, 4, 5, 2, 3, 0, 1};
+// int64_t b[] = {4, 5, 6, 7, 0, 1, 2, 3};
+// int64_t c[] = {0, 1, 2, 3, 4, 5, 6, 7};
+// int64_t d[] = {5, 4, 7, 6, 1, 0, 3, 2};
 
-      __asm__ __volatile__ (
-          "vmovapd   (%0), %%zmm0\n\t" // result = window
-          "vmovdqa64 (%1), %%zmm1\n\t" // a[]
-          "vmovdqa64 (%2), %%zmm2\n\t" // b[]
-          "vmovdqa64 (%3), %%zmm3\n\t" // c[]
-          "vmovdqa64 (%4), %%zmm4\n\t" // d[]
+uint32_t a[] = {1, 0, 3, 2, 5, 4, 7, 6};
+uint32_t b[] = {3, 2, 1, 0, 7, 6, 5, 4};
+uint32_t c[] = {7, 6, 5, 4, 3, 2, 1, 0};
+uint32_t d[] = {2, 3, 0, 1, 6, 7, 4, 2};
 
-//__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
-          "vpermpd %%zmm1, %%zmm0, %%zmm5%{%%k%}\n\t"
-//__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
-          "vminpd  %%zmm5, %%zmm0, %%zmm6%{%%k%}\n\t"
-//__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
-          "vmaxpd  %%zmm5, %%zmm0, %%zmm7%{%%k%}\n\t"
+__asm__ __volatile__ (
+        "vpmovzxbd (%0), %%ymm0\n\t"
+        //"vcvtqq2pd %%zmm0, %%zmm0\n\t" // result = window
+        "vmovdqa (%1), %%ymm1\n\t" // a[]
+        "vmovdqa (%2), %%ymm2\n\t" // b[]
+        "vmovdqa (%3), %%ymm3\n\t" // c[]
+        "vmovdqa (%4), %%ymm4\n\t" // d[]
 
-//  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
+        "vpermd %%ymm0, %%ymm1, %%ymm5\n\t"
+        "vpminsd  %%ymm5, %%ymm0, %%ymm6\n\t"
+        "vpmaxsd  %%ymm5, %%ymm0, %%ymm7\n\t"
+        "mov $0xAA, %%eax\n\t"
+        "kmovb %%eax, %%k1\n\t"
+        "vmovdqa32 %%ymm7, %%ymm6%{%%k1%}\n\t"
+        "vmovdqa32 %%ymm6, %%ymm0\n\t"
 
-          ::"S"(window), "a"(a),
-            "b"(b), "c"(c), "d"(d)
-          :
-      );
+        "vpermd %%ymm0, %%ymm2, %%ymm5\n\t"
+        "vpminsd  %%ymm5, %%ymm0, %%ymm6\n\t"
+        "vpmaxsd  %%ymm5, %%ymm0, %%ymm7\n\t"
+        "mov $0xCC, %%eax\n\t"
+        "kmovb %%eax, %%k1\n\t"
+        "vmovdqa32 %%ymm7, %%ymm6%{%%k1%}\n\t"
+        "vmovdqa32 %%ymm6, %%ymm0\n\t"
+
+        "vpermd %%ymm0, %%ymm1, %%ymm5\n\t"
+        "vpminsd  %%ymm5, %%ymm0, %%ymm6\n\t"
+        "vpmaxsd  %%ymm5, %%ymm0, %%ymm7\n\t"
+        "mov $0xAA, %%eax\n\t"
+        "kmovb %%eax, %%k1\n\t"
+        "vmovdqa32 %%ymm7, %%ymm6%{%%k1%}\n\t"
+        "vmovdqa32 %%ymm6, %%ymm0\n\t"
+
+        "vpermd %%ymm0, %%ymm3, %%ymm5\n\t"
+        "vpminsd  %%ymm5, %%ymm0, %%ymm6\n\t"
+        "vpmaxsd  %%ymm5, %%ymm0, %%ymm7\n\t"
+        "mov $0xF0, %%eax\n\t"
+        "kmovb %%eax, %%k1\n\t"
+        "vmovdqa32 %%ymm7, %%ymm6%{%%k1%}\n\t"
+        "vmovdqa32 %%ymm6, %%ymm0\n\t"
+
+        "vpermd %%ymm0, %%ymm4, %%ymm5\n\t"
+        "vpminsd  %%ymm5, %%ymm0, %%ymm6\n\t"
+        "vpmaxsd  %%ymm5, %%ymm0, %%ymm7\n\t"
+        "mov $0xCC, %%eax\n\t"
+        "kmovb %%eax, %%k1\n\t"
+        "vmovdqa32 %%ymm7, %%ymm6%{%%k1%}\n\t"
+        "vmovdqa32 %%ymm6, %%ymm0\n\t"
+
+        "vpermd %%ymm0, %%ymm1, %%ymm5\n\t"
+        "vpminsd  %%ymm5, %%ymm0, %%ymm6\n\t"
+        "vpmaxsd  %%ymm5, %%ymm0, %%ymm7\n\t"
+        "mov $0xAA, %%eax\n\t"
+        "kmovb %%eax, %%k1\n\t"
+        "vmovdqa32 %%ymm7, %%ymm6%{%%k1%}\n\t"
+        "vmovdqa32 %%ymm6, %%ymm0\n\t"
+
+        "vpmovsdb %%ymm0, (%0)\n\t"
+
+        ::"S"(window), "D"(a),
+          "b"(b), "c"(c), "d"(d)
+        : "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5",
+          "%ymm6","%ymm7", "%eax"
+        );
 
 
 #else

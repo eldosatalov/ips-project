@@ -118,3 +118,109 @@ __asm__ __volatile__ (
       }
 
       _mm512_store_pd(wndw, result);
+
+
+      // int64_t a[] = {6, 7, 4, 5, 2, 3, 0, 1};
+      // int64_t b[] = {4, 5, 6, 7, 0, 1, 2, 3};
+      // int64_t c[] = {0, 1, 2, 3, 4, 5, 6, 7};
+      // int64_t d[] = {5, 4, 7, 6, 1, 0, 3, 2};
+
+      int64_t a[] = {1, 0, 3, 2, 5, 4, 7, 6};
+      int64_t b[] = {3, 2, 1, 0, 7, 6, 5, 4};
+      int64_t c[] = {7, 6, 5, 4, 3, 2, 1, 0};
+      int64_t d[] = {2, 3, 0, 1, 6, 7, 4, 2};
+
+      __asm__ __volatile__ (
+              "vpmovzxbq (%0), %%zmm0\n\t"
+              "vcvtqq2pd %%zmm0, %%zmm0\n\t" // result = window
+              "vmovdqa64 (%1), %%zmm1\n\t" // a[]
+              "vmovdqa64 (%2), %%zmm2\n\t" // b[]
+              "vmovdqa64 (%3), %%zmm3\n\t" // c[]
+              "vmovdqa64 (%4), %%zmm4\n\t" // d[]
+            //{
+            //__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
+              "vpermpd %%zmm0, %%zmm1, %%zmm5\n\t"
+            //__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
+              "vminpd  %%zmm5, %%zmm0, %%zmm6\n\t"
+            //__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+              "vmaxpd  %%zmm5, %%zmm0, %%zmm7\n\t"
+              "mov $0xAA, %%eax\n\t"
+              "kmovb %%eax, %%k1\n\t"
+            //  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
+              "vmovapd %%zmm7, %%zmm6%{%%k1%}\n\t"
+              "vmovapd %%zmm6, %%zmm0\n\t"
+            //}
+            //{
+            //__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
+              "vpermpd %%zmm0, %%zmm2, %%zmm5\n\t"
+            //__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
+              "vminpd  %%zmm5, %%zmm0, %%zmm6\n\t"
+            //__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+              "vmaxpd  %%zmm5, %%zmm0, %%zmm7\n\t"
+              "mov $0xCC, %%eax\n\t"
+              "kmovb %%eax, %%k1\n\t"
+            //  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
+            "vmovapd %%zmm7, %%zmm6%{%%k1%}\n\t"
+            "vmovapd %%zmm6, %%zmm0\n\t"
+            //}
+            //{
+            //__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
+              "vpermpd %%zmm0, %%zmm1, %%zmm5\n\t"
+            //__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
+              "vminpd  %%zmm5, %%zmm0, %%zmm6\n\t"
+            //__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+              "vmaxpd  %%zmm5, %%zmm0, %%zmm7\n\t"
+              "mov $0xAA, %%eax\n\t"
+              "kmovb %%eax, %%k1\n\t"
+            //  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
+            "vmovapd %%zmm7, %%zmm6%{%%k1%}\n\t"
+            "vmovapd %%zmm6, %%zmm0\n\t"
+            //}
+            //{
+            //__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
+              "vpermpd %%zmm0, %%zmm3, %%zmm5\n\t"
+            //__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
+              "vminpd  %%zmm5, %%zmm0, %%zmm6\n\t"
+            //__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+              "vmaxpd  %%zmm5, %%zmm0, %%zmm7\n\t"
+              "mov $0xF0, %%eax\n\t"
+              "kmovb %%eax, %%k1\n\t"
+            //  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
+            "vmovapd %%zmm7, %%zmm6%{%%k1%}\n\t"
+            "vmovapd %%zmm6, %%zmm0\n\t"
+            //}
+            //{
+            //__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
+              "vpermpd %%zmm0, %%zmm4, %%zmm5\n\t"
+            //__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
+              "vminpd  %%zmm5, %%zmm0, %%zmm6\n\t"
+            //__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+              "vmaxpd  %%zmm5, %%zmm0, %%zmm7\n\t"
+              "mov $0xCC, %%eax\n\t"
+              "kmovb %%eax, %%k1\n\t"
+            //  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
+            "vmovapd %%zmm7, %%zmm6%{%%k1%}\n\t"
+            "vmovapd %%zmm6, %%zmm0\n\t"
+            //}
+            //{
+            //__m512d permNeigh = _mm512_permutexvar_pd(idxNoNeigh , result ) ;
+              "vpermpd %%zmm0, %%zmm1, %%zmm5\n\t"
+            //__m512d permNeighMin = _mm512_min_pd(permNeigh , result ) ;
+              "vminpd  %%zmm5, %%zmm0, %%zmm6\n\t"
+            //__m512d permNeighMax = _mm512_max_pd(permNeigh , result ) ;
+              "vmaxpd  %%zmm5, %%zmm0, %%zmm7\n\t"
+              "mov $0xAA, %%eax\n\t"
+              "kmovb %%eax, %%k1\n\t"
+            //  result = _mm512_mask_mov_pd(permNeighMin , 0xAA, permNeighMax);
+            "vmovapd %%zmm7, %%zmm6%{%%k1%}\n\t"
+            "vmovapd %%zmm6, %%zmm0\n\t"
+            //}
+              "vcvtpd2qq %%zmm0, %%zmm0\n\t"
+              "vpmovsqb %%zmm0, (%0)\n\t"
+
+
+              ::"S"(window), "D"(a),
+                "b"(b), "c"(c), "d"(d)
+              : "%zmm0", "%zmm1", "%zmm2", "%zmm3", "%zmm4", "%zmm5",
+                "%zmm6","%zmm7", "%eax"
+      );
